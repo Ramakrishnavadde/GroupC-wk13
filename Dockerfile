@@ -1,26 +1,16 @@
+FROM golang:1.20 AS build
 
-# Multi-stage dockerfile
-FROM golang:1.23 AS builder
 WORKDIR /app
-
-# Copy go mod and sum files
-COPY go.mod go.sum ./
-
-# Download all dependencies
-RUN go mod download
-
-# Copy the source code
 COPY . .
 
-# Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o myApp .
+RUN go mod tidy
+RUN go build -o toronto-time-api .
 
-FROM alpine:3.20
-WORKDIR /server
+FROM alpine:latest
 
-# Install tzdata for time zone support
-RUN apk add --no-cache tzdata
+RUN apk add --no-cache mysql-client
 
-COPY --from=builder /app/myApp .
-EXPOSE 8080
-CMD ["./myApp"]
+WORKDIR /root
+COPY --from=build /app/toronto-time-api /usr/local/bin/toronto-time-api
+
+CMD ["toronto-time-api"]

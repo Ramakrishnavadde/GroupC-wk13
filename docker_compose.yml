@@ -1,45 +1,22 @@
 version: '3.8'
-services:  
-  database:
-    image: mysql:latest
-    container_name: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: timedb
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      TZ: America/Toronto
-    command: ['mysqld', '--default-time-zone=-05:00']
-    ports:
-      - "3306:3306"
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "user", "-p$$MYSQL_PASSWORD"]
-      interval: 8s
-      timeout: 5s
-      retries: 5
 
+services:
   app:
     build: .
-    container_name: GO_TIME_API
     ports:
-      - "80:80"
-    depends_on:
-      database:
-        condition: service_healthy
+      - "8080:8080"
     environment:
-      DB_HOST: database
-      DB_PORT: 3306
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_NAME: timedb
-      TZ: America/Toronto
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=toronto_time_api
+    depends_on:
+      - db
 
-volumes:
-  db_data:
-
-networks:
-  default:
-    driver: bridge
+  db:
+    image: mysql:5.7
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: toronto_time_api
+    ports:
+      - "3306:3306"
